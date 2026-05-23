@@ -51,4 +51,4 @@ flet pack main.py --product-name Satyros --file-description Satyros --name Satyr
 
 ## Credit
 - mizuki-py
-- Made by Antigravity
+- Antigravity (Gemini,Claude)
