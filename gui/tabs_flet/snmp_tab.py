@@ -109,12 +109,7 @@ class SNMPTab:
             self.mgr_v3_user, self.mgr_v3_auth, self.mgr_v3_priv
         ])
 
-        self.mgr_results_table = ft.DataTable(
-            columns=[
-                ft.DataColumn(ft.Text("Result")),
-            ],
-            rows=[]
-        )
+        self.mgr_list = ft.ListView(expand=True, spacing=10)
 
         mgr_card = ft.Card(
             content=ft.Container(
@@ -124,7 +119,7 @@ class SNMPTab:
                     mgr_controls,
                     mgr_v3_controls,
                     ft.Container(
-                        content=ft.Row([self.mgr_results_table], scroll=ft.ScrollMode.AUTO),
+                        content=self.mgr_list,
                         expand=True,
                         border=ft.Border(
                             top=ft.BorderSide(1, "#cccccc"),
@@ -227,7 +222,7 @@ class SNMPTab:
         return kwargs
 
     def do_get(self, e):
-        self.mgr_results_table.rows.clear()
+        self.mgr_list.controls.clear()
         self.page.update()
         try:
             kwargs = self._get_mgr_args()
@@ -238,7 +233,7 @@ class SNMPTab:
             self._display_mgr_result({"error": str(ex)})
 
     def do_walk(self, e):
-        self.mgr_results_table.rows.clear()
+        self.mgr_list.controls.clear()
         self.page.update()
         try:
             kwargs = self._get_mgr_args()
@@ -249,9 +244,35 @@ class SNMPTab:
             self._display_mgr_result({"error": str(ex)})
 
     def _display_mgr_result(self, res):
+        now = datetime.datetime.now().strftime("%H:%M:%S")
+        target_ip = self.mgr_ip_input.value
+        
         if "error" in res:
-            self.mgr_results_table.rows.append(ft.DataRow(cells=[ft.DataCell(ft.Text(f"Error: {res['error']}", color=ft.Colors.ERROR, selectable=True))]))
+            self.mgr_list.controls.append(
+                ft.Container(
+                    content=ft.Column([
+                        ft.Text(f"Time: {now} | Target IP: {target_ip}", weight="bold", color=ft.Colors.ERROR),
+                        ft.Text(f"Error: {res['error']}", selectable=True, color=ft.Colors.ERROR)
+                    ]),
+                    padding=10,
+                    bgcolor=ft.Colors.SURFACE_CONTAINER,
+                    border=ft.Border(bottom=ft.BorderSide(1, "#444444")),
+                    border_radius=5
+                )
+            )
         else:
-            for r in res.get("result", []):
-                self.mgr_results_table.rows.append(ft.DataRow(cells=[ft.DataCell(ft.Text(r, selectable=True))]))
+            for i, r in enumerate(res.get("result", [])):
+                bg_color = ft.Colors.SURFACE_CONTAINER if i % 2 == 0 else ft.Colors.TRANSPARENT
+                self.mgr_list.controls.append(
+                    ft.Container(
+                        content=ft.Column([
+                            ft.Text(f"Time: {now} | Target IP: {target_ip}", weight="bold", color=ft.Colors.BLUE_300),
+                            ft.Text(r, selectable=True)
+                        ]),
+                        padding=10,
+                        bgcolor=bg_color,
+                        border=ft.Border(bottom=ft.BorderSide(1, "#444444")),
+                        border_radius=5
+                    )
+                )
         self.page.update()
