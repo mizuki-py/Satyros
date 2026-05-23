@@ -1,6 +1,6 @@
 ﻿# Satyros
 
-Satyros is a modern, cross-platform networking tool. It provides a unified, graphical interface for running and managing essential network services (TFTP, FTP, SFTP, Syslog, and SNMP) in a single application.
+Satyros is a networking tool. It provides a unified, graphical interface for running and managing essential network services (TFTP, FTP, SFTP, Syslog, and SNMP) in a single application.
 
 ## Features
 
@@ -50,7 +50,5 @@ flet pack main.py --product-name Satyros --file-description Satyros --name Satyr
 ```
 
 ## Credit
-
-mizuki-py
-
-Made by Antigravity
+- mizuki-py
+- Made by Antigravity
