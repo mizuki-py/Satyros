@@ -118,7 +118,7 @@ class SyslogTab:
 
     def append_log(self, ip, msg, severity):
         now = datetime.datetime.now().strftime("%H:%M:%S")
-        self.logs.append({"time": now, "ip": ip, "sev": severity, "msg": msg})
+        self.logs.append({"time": now, "ip": ip, "sev": severity, "msg": msg.strip()})
         
         if len(self.logs) > 1000: # Keep maximum 1000 logs in memory
             self.logs.pop(0)
