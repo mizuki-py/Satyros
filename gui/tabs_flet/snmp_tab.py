@@ -161,8 +161,9 @@ class SNMPTab:
         return res
 
     def append_trap(self, ip, msg):
+        msg = msg.replace('\r', '').replace('\n', ' ').strip()
         now = datetime.datetime.now().strftime("%H:%M:%S")
-        self.traps.append({"time": now, "ip": ip, "msg": msg.strip()})
+        self.traps.append({"time": now, "ip": ip, "msg": msg})
         
         bg_color = ft.Colors.SURFACE_CONTAINER if len(self.traps) % 2 != 0 else ft.Colors.TRANSPARENT
         self.trap_list.controls.append(
