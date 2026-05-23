@@ -1,0 +1,5 @@
+py3tftp
+pyftpdlib
+paramiko
+pyOpenSSL
+pysnmp
