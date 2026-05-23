@@ -28,8 +28,14 @@ def main(page: ft.Page, backend_runner, log_queue):
     snmp_tab = SNMPTab(page, backend_runner)
     version_tab = VersionTab(page)
 
+    tftp_content = tftp_tab.build()
+    ftp_content = ftp_tab.build()
+    syslog_content = syslog_tab.build()
+    snmp_content = snmp_tab.build()
+    version_content = version_tab.build()
+
     content_area = ft.Container(
-        content=tftp_tab.build(),
+        content=tftp_content,
         expand=True,
         padding=20,
         bgcolor="#f4f6f8",
@@ -39,15 +45,15 @@ def main(page: ft.Page, backend_runner, log_queue):
     def change_tab(e):
         idx = e.control.selected_index
         if idx == 0:
-            content_area.content = tftp_tab.build()
+            content_area.content = tftp_content
         elif idx == 1:
-            content_area.content = ftp_tab.build()
+            content_area.content = ftp_content
         elif idx == 2:
-            content_area.content = syslog_tab.build()
+            content_area.content = syslog_content
         elif idx == 3:
-            content_area.content = snmp_tab.build()
+            content_area.content = snmp_content
         elif idx == 4:
-            content_area.content = version_tab.build()
+            content_area.content = version_content
         page.update()
 
     rail = ft.NavigationRail(
@@ -58,23 +64,23 @@ def main(page: ft.Page, backend_runner, log_queue):
         group_alignment=-0.9,
         destinations=[
             ft.NavigationRailDestination(
-                icon=ft.Text("🔁", size=24),
+                icon=ft.Icon(ft.Icons.FOLDER, color=ft.Colors.GREEN_500),
                 label="TFTP",
             ),
             ft.NavigationRailDestination(
-                icon=ft.Text("📁", size=24),
+                icon=ft.Icon(ft.Icons.FOLDER, color=ft.Colors.BLUE_500),
                 label="FTP",
             ),
             ft.NavigationRailDestination(
-                icon=ft.Text("📝", size=24),
+                icon=ft.Icon(ft.Icons.ARTICLE, color=ft.Colors.ORANGE_500),
                 label="Syslog",
             ),
             ft.NavigationRailDestination(
-                icon=ft.Text("🛜", size=24),
+                icon=ft.Icon(ft.Icons.ARTICLE, color=ft.Colors.PURPLE_500),
                 label="SNMP",
             ),
             ft.NavigationRailDestination(
-                icon=ft.Text("ℹ️", size=24),
+                icon=ft.Icon(ft.Icons.INFO, color=ft.Colors.GREY_500),
                 label="Version",
             ),
         ],
@@ -93,6 +99,11 @@ def main(page: ft.Page, backend_runner, log_queue):
                     snmp_tab.append_trap(msg["ip"], msg["message"])
                 elif msg["type"] == "tftp":
                     tftp_tab.update_progress(msg["filename"], msg["ip"], msg["bytes"])
+                elif msg["type"] == "ftp":
+                    ftp_tab.append_transfer(msg["filename"], msg["ip"], msg["status"])
+                elif msg["type"] == "error":
+                    page.snack_bar = ft.SnackBar(ft.Text(msg["message"], color=ft.Colors.ERROR), open=True)
+                    page.update()
             except queue.Empty:
                 break
                 

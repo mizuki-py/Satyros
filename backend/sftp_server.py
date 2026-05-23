@@ -26,8 +26,10 @@ class DummySFTPAuth(paramiko.ServerInterface):
         return "password"
 
     def check_channel_subsystem_request(self, channel, name):
+        if name == b"sftp":
+            name = "sftp"
         if name == "sftp":
-            return True
+            return super().check_channel_subsystem_request(channel, name)
         return False
 
 def make_sftp_server_class(root_dir, allow_write):
@@ -52,7 +54,7 @@ def make_sftp_server_class(root_dir, allow_write):
                 return paramiko.SFTP_PERMISSION_DENIED
             self.writefile.seek(offset)
             self.writefile.write(data)
-            return paramiko.SFTP_OK
+            return len(data)
 
         def close(self):
             if self.readfile:
@@ -159,10 +161,9 @@ class AsyncSFTPServer:
             self.server_socket.settimeout(1.0)
             logger.info(f"SFTP server started at {self.host}:{self.port} with user {self.username}")
             
-            while self.running:
+            def handle_client(client_conn):
                 try:
-                    conn, addr = self.server_socket.accept()
-                    transport = paramiko.Transport(conn)
+                    transport = paramiko.Transport(client_conn)
                     transport.add_server_key(paramiko.RSAKey.generate(2048))
                     
                     sftp_cls = make_sftp_server_class(self.root_dir, self.allow_write)
@@ -171,6 +172,21 @@ class AsyncSFTPServer:
                     server_if = DummySFTPAuth(self.username, self.password)
                     transport.start_server(server=server_if)
                     
+                    chan = transport.accept(20)
+                    if chan is None:
+                        return
+                        
+                    # Keep thread alive to prevent garbage collection of transport/socket
+                    import time
+                    while transport.is_active():
+                        time.sleep(1)
+                except Exception as ex:
+                    logger.error(f"SFTP handler error: {ex}")
+
+            while self.running:
+                try:
+                    conn, addr = self.server_socket.accept()
+                    threading.Thread(target=handle_client, args=(conn,), daemon=True).start()
                 except socket.timeout:
                     continue
                 except Exception as e:

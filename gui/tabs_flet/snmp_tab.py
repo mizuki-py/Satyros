@@ -23,7 +23,7 @@ class SNMPTab:
         self.trap_v3_auth = ft.TextField(label="v3 Auth Key", width=150, password=True, can_reveal_password=True)
         self.trap_v3_priv = ft.TextField(label="v3 Priv Key", width=150, password=True, can_reveal_password=True)
         
-        self.btn_toggle = ft.Button(
+        self.btn_toggle = ft.ElevatedButton(
             content=ft.Text("Start Receiver"),
             on_click=self.toggle_server,
             style=ft.ButtonStyle(color=ft.Colors.ON_PRIMARY, bgcolor=ft.Colors.PRIMARY)
@@ -49,7 +49,7 @@ class SNMPTab:
                 self.page.snack_bar = ft.SnackBar(ft.Text(f"Save failed: {ex}"), open=True)
                 self.page.update()
 
-        self.btn_export = ft.Button(content=ft.Text("Export CSV"), on_click=handle_export)
+        self.btn_export = ft.ElevatedButton(content="Export CSV", on_click=handle_export)
 
         trap_controls = ft.Row([
             self.trap_ip_input, self.trap_port_input, 
@@ -62,14 +62,7 @@ class SNMPTab:
             self.trap_v3_user, self.trap_v3_auth, self.trap_v3_priv
         ])
 
-        self.trap_table = ft.DataTable(
-            columns=[
-                ft.DataColumn(ft.Text("Time")),
-                ft.DataColumn(ft.Text("Source IP")),
-                ft.DataColumn(ft.Text("Trap Content")),
-            ],
-            rows=[]
-        )
+        self.trap_list = ft.ListView(expand=True, spacing=10)
 
         trap_card = ft.Card(
             content=ft.Container(
@@ -80,7 +73,7 @@ class SNMPTab:
                     export_controls,
                     trap_v3_controls,
                     ft.Container(
-                        content=ft.Column([self.trap_table], scroll=ft.ScrollMode.AUTO),
+                        content=self.trap_list,
                         height=200,
                         border=ft.Border(
                             top=ft.BorderSide(1, "#cccccc"),
@@ -105,8 +98,8 @@ class SNMPTab:
         self.mgr_v3_auth = ft.TextField(label="v3 Auth Key", width=150, password=True, can_reveal_password=True)
         self.mgr_v3_priv = ft.TextField(label="v3 Priv Key", width=150, password=True, can_reveal_password=True)
 
-        self.btn_get = ft.Button(content=ft.Text("Get"), on_click=self.do_get)
-        self.btn_walk = ft.Button(content=ft.Text("Walk"), on_click=self.do_walk)
+        self.btn_get = ft.ElevatedButton(content="Get", on_click=self.do_get)
+        self.btn_walk = ft.ElevatedButton(content="Walk", on_click=self.do_walk)
 
         mgr_controls = ft.Row([
             self.mgr_ip_input, self.mgr_port_input, self.mgr_oid_input, self.mgr_community, self.mgr_version,
@@ -131,7 +124,7 @@ class SNMPTab:
                     mgr_controls,
                     mgr_v3_controls,
                     ft.Container(
-                        content=ft.Column([self.mgr_results_table], scroll=ft.ScrollMode.AUTO),
+                        content=ft.Row([self.mgr_results_table], scroll=ft.ScrollMode.AUTO),
                         expand=True,
                         border=ft.Border(
                             top=ft.BorderSide(1, "#cccccc"),
@@ -150,13 +143,19 @@ class SNMPTab:
         res = ft.Column([trap_card, mgr_card], expand=True)
         
         # Restore traps on rebuild
-        for t in self.traps:
-            self.trap_table.rows.append(
-                ft.DataRow(cells=[
-                    ft.DataCell(ft.Text(t['time'])),
-                    ft.DataCell(ft.Text(t['ip'])),
-                    ft.DataCell(ft.Text(t['msg'])),
-                ])
+        for i, t in enumerate(self.traps):
+            bg_color = ft.Colors.SURFACE_CONTAINER if i % 2 == 0 else ft.Colors.TRANSPARENT
+            self.trap_list.controls.append(
+                ft.Container(
+                    content=ft.Column([
+                        ft.Text(f"Time: {t['time']} | Source IP: {t['ip']}", weight="bold", color=ft.Colors.BLUE_300),
+                        ft.Text(t['msg'], selectable=True)
+                    ]),
+                    padding=10,
+                    bgcolor=bg_color,
+                    border=ft.Border(bottom=ft.BorderSide(1, "#444444")),
+                    border_radius=5
+                )
             )
             
         return res
@@ -165,24 +164,33 @@ class SNMPTab:
         now = datetime.datetime.now().strftime("%H:%M:%S")
         self.traps.append({"time": now, "ip": ip, "msg": msg})
         
-        self.trap_table.rows.append(
-            ft.DataRow(cells=[
-                ft.DataCell(ft.Text(now)),
-                ft.DataCell(ft.Text(ip)),
-                ft.DataCell(ft.Text(msg)),
-            ])
+        bg_color = ft.Colors.SURFACE_CONTAINER if len(self.traps) % 2 != 0 else ft.Colors.TRANSPARENT
+        self.trap_list.controls.append(
+            ft.Container(
+                content=ft.Column([
+                    ft.Text(f"Time: {now} | Source IP: {ip}", weight="bold", color=ft.Colors.BLUE_300),
+                    ft.Text(msg, selectable=True)
+                ]),
+                padding=10,
+                bgcolor=bg_color,
+                border=ft.Border(bottom=ft.BorderSide(1, "#444444")),
+                border_radius=5
+            )
         )
         
-        if len(self.trap_table.rows) > 100:
-            self.trap_table.rows.pop(0)
+        if len(self.trap_list.controls) > 100:
+            self.trap_list.controls.pop(0)
             
         self.page.update()
 
     def toggle_server(self, e):
         self.running = not self.running
         if self.running:
-            self.btn_toggle.content = ft.Text("Stop Receiver")
-            self.btn_toggle.style = ft.ButtonStyle(bgcolor=ft.Colors.ERROR)
+            if isinstance(self.btn_toggle.content, ft.Text):
+                self.btn_toggle.content.value = "Stop Receiver"
+            else:
+                self.btn_toggle.content = ft.Text("Stop Receiver")
+            self.btn_toggle.style = ft.ButtonStyle(color=ft.Colors.ON_PRIMARY, bgcolor=ft.Colors.ERROR)
             kwargs = {}
             if self.trap_v3_user.value:
                 kwargs['v3_user'] = self.trap_v3_user.value
@@ -192,8 +200,11 @@ class SNMPTab:
                 kwargs['v3_priv'] = self.trap_v3_priv.value
             self.backend_runner.start_server('snmp_srv', self.trap_ip_input.value, self.trap_port_input.value, **kwargs)
         else:
-            self.btn_toggle.content = ft.Text("Start Receiver")
-            self.btn_toggle.style = ft.ButtonStyle(bgcolor=ft.Colors.PRIMARY)
+            if isinstance(self.btn_toggle.content, ft.Text):
+                self.btn_toggle.content.value = "Start Receiver"
+            else:
+                self.btn_toggle.content = ft.Text("Start Receiver")
+            self.btn_toggle.style = ft.ButtonStyle(color=ft.Colors.ON_PRIMARY, bgcolor=ft.Colors.PRIMARY)
             self.backend_runner.stop_server('snmp_srv')
         self.page.update()
 
@@ -238,8 +249,8 @@ class SNMPTab:
 
     def _display_mgr_result(self, res):
         if "error" in res:
-            self.mgr_results_table.rows.append(ft.DataRow(cells=[ft.DataCell(ft.Text(f"Error: {res['error']}", color=ft.Colors.ERROR))]))
+            self.mgr_results_table.rows.append(ft.DataRow(cells=[ft.DataCell(ft.Text(f"Error: {res['error']}", color=ft.Colors.ERROR, selectable=True))]))
         else:
             for r in res.get("result", []):
-                self.mgr_results_table.rows.append(ft.DataRow(cells=[ft.DataCell(ft.Text(r))]))
+                self.mgr_results_table.rows.append(ft.DataRow(cells=[ft.DataCell(ft.Text(r, selectable=True))]))
         self.page.update()

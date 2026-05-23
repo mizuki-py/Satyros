@@ -19,9 +19,12 @@ class BackendRunner:
         def tftp_cb(filename, ip, bytes_transferred):
             self.log_queue.put({"type": "tftp", "filename": filename, "ip": ip, "bytes": bytes_transferred})
 
+        def ftp_cb(filename, ip, status):
+            self.log_queue.put({"type": "ftp", "filename": filename, "ip": ip, "status": status})
+
         self.syslog_srv = SyslogServer(callback=syslog_cb)
         self.tftp_srv = AsyncTFTPServer(callback=tftp_cb)
-        self.ftp_srv = AsyncFTPServer()
+        self.ftp_srv = AsyncFTPServer(callback=ftp_cb)
         self.sftp_srv = AsyncSFTPServer()
         self.snmp_srv = AsyncSNMPServer(callback=snmp_cb)
         
@@ -46,10 +49,9 @@ class BackendRunner:
             try:
                 fut.result()
             except Exception as e:
-                # Put the error into the queue so the GUI can show it
                 msg = f"Failed to start {srv_name} on {host}:{port}. Error: {e}"
                 print(msg)
-                self.log_queue.put({"type": "syslog", "ip": "SYSTEM", "message": msg})
+                self.log_queue.put({"type": "error", "message": msg})
                 
         future = asyncio.run_coroutine_threadsafe(srv.start(**kwargs), self.loop)
         future.add_done_callback(done_callback)

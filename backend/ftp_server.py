@@ -46,13 +46,28 @@ def generate_self_signed_cert(cert_path, key_path):
     with open(cert_path, "wb") as f:
         f.write(cert.public_bytes(serialization.Encoding.PEM))
 
+class NotifyingFTPHandler(FTPHandler):
+    def on_file_sent(self, file):
+        super().on_file_sent(file)
+        if hasattr(self.server, 'callback') and self.server.callback:
+            self.server.callback(os.path.basename(file), self.remote_ip, "downloaded")
+
+    def on_file_received(self, file):
+        super().on_file_received(file)
+        if hasattr(self.server, 'callback') and self.server.callback:
+            self.server.callback(os.path.basename(file), self.remote_ip, "uploaded")
+
+class NotifyingTLS_FTPHandler(TLS_FTPHandler, NotifyingFTPHandler):
+    pass
+
 class AsyncFTPServer:
-    def __init__(self, host='0.0.0.0', port=21, root_dir=DEFAULT_ROOT_DIR):
+    def __init__(self, host='0.0.0.0', port=21, root_dir=DEFAULT_ROOT_DIR, callback=None):
         self.host = host
         self.port = port
         self.root_dir = root_dir
         self.server = None
         self.thread = None
+        self.callback = callback
         
         self.username = "admin"
         self.password = "password"
@@ -70,18 +85,19 @@ class AsyncFTPServer:
             
         if self.use_ftps:
             generate_self_signed_cert("cert.pem", "key.pem")
-            handler = TLS_FTPHandler
+            handler = NotifyingTLS_FTPHandler
             handler.certfile = "cert.pem"
             handler.keyfile = "key.pem"
             handler.tls_control_required = False
             handler.tls_data_required = False
         else:
-            handler = FTPHandler
+            handler = NotifyingFTPHandler
             
         handler.authorizer = authorizer
 
         try:
             self.server = FTPServer((self.host, self.port), handler)
+            self.server.callback = self.callback
             protocol = "FTPS" if self.use_ftps else "FTP"
             logger.info(f"{protocol} server started at {self.host}:{self.port} with user {self.username}")
             self.server.serve_forever()

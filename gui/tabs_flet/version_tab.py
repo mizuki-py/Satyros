@@ -5,17 +5,47 @@ class VersionTab:
         self.page = page
 
     def build(self):
+        version = "Unknown"
+        try:
+            import os
+            from core.config import BASE_DIR
+            with open(os.path.join(BASE_DIR, 'version.txt'), 'r', encoding='utf-8') as f:
+                version = f.read().strip()
+        except Exception:
+            pass
+            
         title = ft.Text("Satyros", size=32, weight="bold", color=ft.Colors.PRIMARY if hasattr(ft.Colors, 'PRIMARY') else "#4285F4")
-        subtitle = ft.Text("Version 0.2.0", size=18, color="#555555")
+        subtitle = ft.Text(f"Version {version}", size=18, color="#555555")
+        
+        import sys
+        
+        def get_ver(module_name, attr='__version__'):
+            try:
+                mod = __import__(module_name)
+                return getattr(mod, attr, 'Unknown')
+            except ImportError:
+                return 'Not Installed'
+                
+        py_ver = sys.version.split()[0]
+        flet_ver = get_ver('flet')
+        py3tftp_ver = get_ver('py3tftp')
+        try:
+            import pyftpdlib
+            pyftpdlib_ver = getattr(pyftpdlib, '__ver__', getattr(pyftpdlib, '__version__', 'Unknown'))
+        except ImportError:
+            pyftpdlib_ver = 'Not Installed'
+        paramiko_ver = get_ver('paramiko')
+        openssl_ver = get_ver('OpenSSL')
+        pysnmp_ver = get_ver('pysnmp')
         
         libraries = ft.Column([
-            ft.Text("• Python 3.14.5 (Core Interpreter)"),
-            ft.Text("• flet 0.85.1 (GUI Framework)"),
-            ft.Text("• py3tftp 1.3.0 (TFTP Server)"),
-            ft.Text("• pyftpdlib 2.2.0 (FTP/FTPS Server)"),
-            ft.Text("• paramiko 5.0.0 (SFTP Server)"),
-            ft.Text("• pyOpenSSL 26.2.0 (TLS Certificate Generation)"),
-            ft.Text("• pysnmp 7.1.27 (SNMP Manager & Trap Receiver)")
+            ft.Text(f"• Python {py_ver} (Core Interpreter)"),
+            ft.Text(f"• flet {flet_ver} (GUI Framework)"),
+            ft.Text(f"• py3tftp {py3tftp_ver} (TFTP Server)"),
+            ft.Text(f"• pyftpdlib {pyftpdlib_ver} (FTP/FTPS Server)"),
+            ft.Text(f"• paramiko {paramiko_ver} (SFTP Server)"),
+            ft.Text(f"• pyOpenSSL {openssl_ver} (TLS Certificate Generation)"),
+            ft.Text(f"• pysnmp {pysnmp_ver} (SNMP Manager & Trap Receiver)")
         ])
         
         lib_section = ft.Container(

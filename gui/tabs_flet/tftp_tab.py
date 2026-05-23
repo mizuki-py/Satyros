@@ -28,7 +28,7 @@ class TFTPTab:
         desktop_path = os.path.join(os.path.expanduser('~'), 'Desktop')
         self.root_input = ft.TextField(label="Root Directory", value=desktop_path, expand=True)
         
-        self.btn_toggle = ft.Button(
+        self.btn_toggle = ft.ElevatedButton(
             content=ft.Text("Start Server"),
             on_click=self.toggle_server,
             style=ft.ButtonStyle(color=ft.Colors.ON_PRIMARY, bgcolor=ft.Colors.PRIMARY)
@@ -94,12 +94,18 @@ class TFTPTab:
     def toggle_server(self, e):
         self.server_running = not self.server_running
         if self.server_running:
-            self.btn_toggle.content = ft.Text("Stop Server")
-            self.btn_toggle.style = ft.ButtonStyle(bgcolor=ft.Colors.ERROR)
+            if isinstance(self.btn_toggle.content, ft.Text):
+                self.btn_toggle.content.value = "Stop Server"
+            else:
+                self.btn_toggle.content = ft.Text("Stop Server")
+            self.btn_toggle.style = ft.ButtonStyle(color=ft.Colors.ON_PRIMARY, bgcolor=ft.Colors.ERROR)
             self.backend_runner.start_server('tftp_srv', self.ip_input.value, self.port_input.value, self.root_input.value)
         else:
-            self.btn_toggle.content = ft.Text("Start Server")
-            self.btn_toggle.style = ft.ButtonStyle(bgcolor=ft.Colors.PRIMARY)
+            if isinstance(self.btn_toggle.content, ft.Text):
+                self.btn_toggle.content.value = "Start Server"
+            else:
+                self.btn_toggle.content = ft.Text("Start Server")
+            self.btn_toggle.style = ft.ButtonStyle(color=ft.Colors.ON_PRIMARY, bgcolor=ft.Colors.PRIMARY)
             self.backend_runner.stop_server('tftp_srv')
         self.page.update()
 

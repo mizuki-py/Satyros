@@ -50,9 +50,10 @@ class TFTPClient:
                                 if progress_cb: progress_cb(bytes_received, True)
                                 break
                     elif opcode == self.OP_ERROR:
-                        code, msg = struct.unpack(f">h{len(data)-3}s", data[2:-1])
-                        logger.error(f"TFTP Error {code}: {msg.decode()}")
-                        raise Exception(f"TFTP Error {code}: {msg.decode()}")
+                        code, = struct.unpack(">h", data[2:4])
+                        msg = data[4:-1]
+                        logger.error(f"TFTP Error {code}: {msg.decode(errors='ignore')}")
+                        raise Exception(f"TFTP Error {code}: {msg.decode(errors='ignore')}")
                         
         except Exception as e:
             logger.error(f"TFTP Get failed: {e}")
@@ -97,9 +98,10 @@ class TFTPClient:
                                     progress_cb(bytes_sent, True)
                                 break
                     elif opcode == self.OP_ERROR:
-                        code, msg = struct.unpack(f">h{len(data)-3}s", data[2:-1])
-                        logger.error(f"TFTP Error {code}: {msg.decode()}")
-                        raise Exception(f"TFTP Error {code}: {msg.decode()}")
+                        code, = struct.unpack(">h", data[2:4])
+                        msg = data[4:-1]
+                        logger.error(f"TFTP Error {code}: {msg.decode(errors='ignore')}")
+                        raise Exception(f"TFTP Error {code}: {msg.decode(errors='ignore')}")
                         
         except Exception as e:
             logger.error(f"TFTP Put failed: {e}")

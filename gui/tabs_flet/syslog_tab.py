@@ -10,14 +10,16 @@ class SyslogTab:
         self.running = False
         self.logs = []
         self.search_filter = ""
+        import threading
+        self.lock = threading.Lock()
 
     def build(self):
         ips = get_local_ips()
         self.ip_input = ft.Dropdown(label="Listen IP", value="0.0.0.0", options=[ft.dropdown.Option(ip) for ip in ips], expand=True)
         self.port_input = ft.TextField(label="Port", value="514", width=100)
         
-        self.btn_toggle = ft.Button(
-            content=ft.Text("Start Server"),
+        self.btn_toggle = ft.ElevatedButton(
+            content=ft.Text("Start Syslog"),
             on_click=self.toggle_server,
             style=ft.ButtonStyle(color=ft.Colors.ON_PRIMARY, bgcolor=ft.Colors.PRIMARY)
         )
@@ -52,15 +54,7 @@ class SyslogTab:
             prefix_icon=ft.Icons.SEARCH if hasattr(ft.Icons, 'SEARCH') else None
         )
 
-        self.log_table = ft.DataTable(
-            columns=[
-                ft.DataColumn(ft.Text("Time")),
-                ft.DataColumn(ft.Text("Source IP")),
-                ft.DataColumn(ft.Text("Severity")),
-                ft.DataColumn(ft.Text("Message")),
-            ],
-            rows=[]
-        )
+        self.log_list = ft.ListView(expand=True, spacing=10)
 
         controls = ft.Card(
             content=ft.Container(
@@ -75,7 +69,7 @@ class SyslogTab:
         )
 
         log_view = ft.Container(
-            content=ft.Column([self.log_table], scroll=ft.ScrollMode.AUTO),
+            content=self.log_list,
             expand=True,
             border=ft.Border(
                 top=ft.BorderSide(1, "#cccccc"),
@@ -92,32 +86,35 @@ class SyslogTab:
         return res
 
     def _render_table(self):
-        self.log_table.rows.clear()
-        
-        # Limit logs to latest 100 for performance
-        logs_to_show = self.logs[-100:]
-        
-        for row in logs_to_show:
-            if self.search_filter and self.search_filter not in row['msg'].lower() and self.search_filter not in row['ip']:
-                continue
-                
-            color = None
-            if row['sev'] <= 2: # Emergency, Alert, Critical
-                color = ft.Colors.RED if hasattr(ft.Colors, 'RED') else "red"
-            elif row['sev'] == 4: # Warning
-                color = ft.Colors.YELLOW if hasattr(ft.Colors, 'YELLOW') else "yellow"
-            elif row['sev'] == 6: # Info
-                color = ft.Colors.WHITE if hasattr(ft.Colors, 'WHITE') else "white"
-                
-            cells = [
-                ft.DataCell(ft.Text(row['time'])),
-                ft.DataCell(ft.Text(row['ip'])),
-                ft.DataCell(ft.Text(str(row['sev']))),
-                ft.DataCell(ft.Text(row['msg'])),
-            ]
-            self.log_table.rows.append(ft.DataRow(cells=cells, color=color))
+        with self.lock:
+            self.log_list.controls.clear()
             
-        self.page.update()
+            # Limit logs to latest 100 for performance
+            logs_to_show = self.logs[-100:]
+            
+            for row in logs_to_show:
+                if self.search_filter and self.search_filter not in row['msg'].lower() and self.search_filter not in row['ip']:
+                    continue
+                    
+                color = None
+                if row['sev'] <= 2: # Emergency, Alert, Critical
+                    color = ft.Colors.RED if hasattr(ft.Colors, 'RED') else "red"
+                elif row['sev'] == 4: # Warning
+                    color = ft.Colors.YELLOW if hasattr(ft.Colors, 'YELLOW') else "yellow"
+                    
+                log_item = ft.Container(
+                    content=ft.Column([
+                        ft.Text(f"Time: {row['time']} | Source IP: {row['ip']} | Severity: {row['sev']}", weight="bold", color=color),
+                        ft.Text(row['msg'], selectable=True, color=color)
+                    ]),
+                    padding=10,
+                    border=ft.Border(
+                        bottom=ft.BorderSide(1, "#444444")
+                    )
+                )
+                self.log_list.controls.append(log_item)
+                
+            self.page.update()
 
     def append_log(self, ip, msg, severity):
         now = datetime.datetime.now().strftime("%H:%M:%S")
@@ -131,11 +128,17 @@ class SyslogTab:
     def toggle_server(self, e):
         self.running = not self.running
         if self.running:
-            self.btn_toggle.content = ft.Text("Stop Server")
-            self.btn_toggle.style = ft.ButtonStyle(bgcolor=ft.Colors.ERROR)
+            if isinstance(self.btn_toggle.content, ft.Text):
+                self.btn_toggle.content.value = "Stop Syslog"
+            else:
+                self.btn_toggle.content = ft.Text("Stop Syslog")
+            self.btn_toggle.style = ft.ButtonStyle(color=ft.Colors.ON_PRIMARY, bgcolor=ft.Colors.ERROR)
             self.backend_runner.start_server('syslog_srv', self.ip_input.value, self.port_input.value)
         else:
-            self.btn_toggle.content = ft.Text("Start Server")
-            self.btn_toggle.style = ft.ButtonStyle(bgcolor=ft.Colors.PRIMARY)
+            if isinstance(self.btn_toggle.content, ft.Text):
+                self.btn_toggle.content.value = "Start Syslog"
+            else:
+                self.btn_toggle.content = ft.Text("Start Syslog")
+            self.btn_toggle.style = ft.ButtonStyle(color=ft.Colors.ON_PRIMARY, bgcolor=ft.Colors.PRIMARY)
             self.backend_runner.stop_server('syslog_srv')
         self.page.update()

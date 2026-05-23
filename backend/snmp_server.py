@@ -35,12 +35,17 @@ class AsyncSNMPServer:
                 
         msg = ", ".join(resolved_varbinds)
         
-        source_ip = "Unknown"
+        source_ip = "Unknown IP"
         try:
-            transportDomain, transportAddress = snmpEngine.msgAndPduDsp.getTransportInfo(stateReference)
+            transportDomain, transportAddress = snmpEngine.message_dispatcher.get_transport_info(stateReference)
             source_ip = transportAddress[0]
         except Exception:
-            pass
+            try:
+                # Fallback for older pysnmp
+                transportDomain, transportAddress = snmpEngine.msgAndPduDsp.getTransportInfo(stateReference)
+                source_ip = transportAddress[0]
+            except Exception:
+                pass
         
         if self.callback:
             self.callback(source_ip, msg)
@@ -84,6 +89,7 @@ class AsyncSNMPServer:
             logger.info(f"SNMP Trap server started at {self.host}:{self.port}")
         except Exception as e:
             logger.error(f"Failed to start SNMP server: {e}")
+            raise
 
     async def stop(self):
         # We need to unregister transport
