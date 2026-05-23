@@ -5,17 +5,8 @@ class VersionTab:
         self.page = page
 
     def build(self):
-        version = "Unknown"
-        try:
-            import os
-            from core.config import BASE_DIR
-            with open(os.path.join(BASE_DIR, 'version.txt'), 'r', encoding='utf-8') as f:
-                version = f.read().strip()
-        except Exception:
-            pass
-            
         title = ft.Text("Satyros", size=32, weight="bold", color=ft.Colors.PRIMARY if hasattr(ft.Colors, 'PRIMARY') else "#4285F4")
-        subtitle = ft.Text(f"Version {version}", size=18, color="#555555")
+        subtitle = ft.Text("Version 0.3.0", size=18, color="#555555")
         
         import sys
         
