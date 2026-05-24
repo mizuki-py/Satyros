@@ -5,17 +5,20 @@ Satyros is a networking tool. It provides a unified, graphical interface for run
 ## Features
 
 - **TFTP Server & Client**
+  ![TFTP Server](readme/tftp.png)
   - Run a TFTP server with configurable listen IP, port, and root directory.
   - View real-time active server transfers.
   - Use the built-in TFTP client to Get or Put files.
 
 - **FTP / SFTP / FTPS Server**
+  ![FTP Server](readme/ftp.png)
   - Run a standard FTP server.
   - Enable FTPS (Implicit TLS) with automatic, on-the-fly self-signed certificate generation.
   - Run an SFTP server powered by `paramiko` for secure file transfers.
   - Shared user authentication and directory access controls.
 
 - **Syslog Server**
+  ![Syslog Server](readme/syslog.png)
   - Receive and view syslog messages in real-time.
   - Visual color-coding based on severity (Emergency/Alert/Critical = Red, Warning = Yellow, Info = White).
   - Search and filter logs instantly.
@@ -23,6 +26,7 @@ Satyros is a networking tool. It provides a unified, graphical interface for run
   - Automatic log rotation (daily `syslog.log`).
 
 - **SNMP Manager & Trap Receiver**
+  ![SNMP Manager](readme/snmp.png)
   - **Trap Receiver**: Listen for SNMP traps (v1/v2c/v3). Automatically decodes OIDs into human-readable strings using MIB dictionaries. Export traps to a CSV file.
   - **SNMP Manager**: Perform SNMP `Get` and `Walk` queries with support for SNMPv3 authentication and privacy protocols.
 
