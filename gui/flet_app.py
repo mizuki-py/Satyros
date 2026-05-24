@@ -6,7 +6,7 @@ def main(page: ft.Page, backend_runner, log_queue):
     page.title = "Satyros"
     page.window.icon = "icon.png"
     page.window_width = 1000
-    page.window_height = 700
+    page.window_height = 800
     page.theme_mode = ft.ThemeMode.LIGHT
     
     # Modern theme colors inspired by Google
