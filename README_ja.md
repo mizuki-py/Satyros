@@ -47,9 +47,9 @@ python main.py
 
 ## ビルド方法
 
-SatyrosをスタンドアロンのEXEファイルにコンパイルするには、Flet CLIを使用します：
+SatyrosをスタンドアロンのEXEファイルにコンパイルするには、同梱の専用ビルドスクリプトを使用します。このスクリプトは、Fletエンジンのアイコン上書きやパッケージ化を自動で行い、どの環境でも確実に同じ結果が得られるように設計されています：
 ```bash
-flet pack main.py --icon icon.ico --name Satyros --product-name Satyros --product-version 0.3.2 --file-version 0.3.2.0 --file-description Satyros --company-name Satyros --copyright "2026 Satyros" --add-data "assets:assets"
+python build_windows.py
 ```
 
 ## 実行時の注意事項

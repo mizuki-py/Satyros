@@ -48,9 +48,9 @@ python main.py
 
 ## Build
 
-To compile Satyros into a standalone executable, use the Flet CLI:
+To compile Satyros into a standalone executable with correct icons and metadata, use the provided custom build script. This script automatically patches the Flet engine to ensure 100% reproducible builds across any environment:
 ```bash
-flet pack main.py --icon icon.ico --name Satyros --product-name Satyros --product-version 0.3.2 --file-version 0.3.2.0 --file-description Satyros --company-name Satyros --copyright "2026 Satyros" --add-data "assets:assets"
+python build_windows.py
 ```
 
 ## Notes on Execution
