@@ -65,7 +65,7 @@ def main():
     import sys
     if sys.platform == "win32":
         try:
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("com.satyros.app")
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("com.satyros.app.v2")
         except Exception:
             pass
     
