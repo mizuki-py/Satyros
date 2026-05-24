@@ -1,3 +1,19 @@
+import sys
+import os
+import zipfile
+
+def setup_flet_view():
+    if getattr(sys, 'frozen', False):
+        bundle_zip = os.path.join(sys._MEIPASS, 'flet_desktop', 'app', 'flet-windows.zip')
+        if os.path.exists(bundle_zip):
+            extract_dir = os.path.join(sys._MEIPASS, 'flet_engine_extracted')
+            if not os.path.exists(extract_dir):
+                with zipfile.ZipFile(bundle_zip, 'r') as zip_ref:
+                    zip_ref.extractall(extract_dir)
+            os.environ['FLET_VIEW_PATH'] = os.path.join(extract_dir, 'flet')
+
+setup_flet_view()
+
 import asyncio
 import threading
 from backend.syslog_server import SyslogServer
