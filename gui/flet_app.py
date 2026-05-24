@@ -129,5 +129,5 @@ def main(page: ft.Page, backend_runner, log_queue):
     )
 
 def start_flet_app(backend_runner, log_queue):
-    ft.app(target=lambda page: main(page, backend_runner, log_queue))
+    ft.app(target=lambda page: main(page, backend_runner, log_queue), assets_dir="assets")
 
