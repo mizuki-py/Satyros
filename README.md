@@ -1,4 +1,4 @@
-﻿# Satyros
+# Satyros v0.3.2
 
 Satyros is a networking tool. It provides a unified, graphical interface for running and managing essential network services (TFTP, FTP, SFTP, Syslog, and SNMP) in a single application.
 
@@ -46,7 +46,7 @@ python main.py
 
 To compile Satyros into a standalone executable, use the Flet CLI:
 ```bash
-flet pack main.py --product-name Satyros --file-description Satyros --name Satyros
+flet pack main.py --icon icon.ico --name Satyros --product-name Satyros --product-version 0.3.2 --file-version 0.3.2.0 --file-description Satyros --company-name Satyros --copyright "2026 Satyros" --add-data "assets:assets"
 ```
 
 ## Credit

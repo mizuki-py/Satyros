@@ -1,4 +1,4 @@
-# Satyros
+# Satyros v0.3.2
 
 Satyrosはネットワーク管理ツールです。TFTP、FTP、SFTP、Syslog、SNMPといった主要なネットワークサービスを、単一のグラフィカルなインターフェースで実行・管理することができます。
 
@@ -45,9 +45,9 @@ python main.py
 
 SatyrosをスタンドアロンのEXEファイルにコンパイルするには、Flet CLIを使用します：
 ```bash
-flet pack main.py --product-name Satyros --file-description Satyros --name Satyros
+flet pack main.py --icon icon.ico --name Satyros --product-name Satyros --product-version 0.3.2 --file-version 0.3.2.0 --file-description Satyros --company-name Satyros --copyright "2026 Satyros" --add-data "assets:assets"
 ```
 
 ## クレジット
 - mizuki-py
-- Antigravity(Gemini, Calude)
+- Antigravity(Gemini, Claude)
