@@ -61,6 +61,13 @@ class BackendRunner:
         asyncio.run_coroutine_threadsafe(srv.stop(), self.loop)
 
 def main():
+    import ctypes
+    import sys
+    if sys.platform == "win32":
+        try:
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("com.satyros.app")
+        except Exception:
+            pass
     
     import queue
     log_queue = queue.Queue()
