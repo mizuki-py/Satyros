@@ -4,6 +4,7 @@ import os
 
 def main(page: ft.Page, backend_runner, log_queue):
     page.title = "Satyros"
+    page.window.icon = "icon.png"
     page.window_width = 1000
     page.window_height = 700
     page.theme_mode = ft.ThemeMode.LIGHT
@@ -128,6 +129,9 @@ def main(page: ft.Page, backend_runner, log_queue):
         )
     )
 
-def start_flet_app(backend_runner, log_queue):
-    ft.app(target=lambda page: main(page, backend_runner, log_queue), assets_dir="assets")
+from core.config import BASE_DIR, APP_DIR
+import os
 
+def start_flet_app(backend_runner, log_queue):
+    assets_path = os.path.join(APP_DIR, "assets")
+    ft.app(target=lambda page: main(page, backend_runner, log_queue), assets_dir=assets_path)
