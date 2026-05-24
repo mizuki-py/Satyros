@@ -49,6 +49,12 @@ To compile Satyros into a standalone executable, use the Flet CLI:
 flet pack main.py --icon icon.ico --name Satyros --product-name Satyros --product-version 0.3.2 --file-version 0.3.2.0 --file-description Satyros --company-name Satyros --copyright "2026 Satyros" --add-data "assets:assets"
 ```
 
+## Notes on Execution
+
+When you run the compiled standalone executable (`Satyros.exe`), please be aware of the following file system behaviors:
+- **Temporary Files**: PyInstaller automatically extracts the Python runtime and application scripts to a temporary folder (`%TEMP%\_MEIxxxxxx`). This folder is automatically deleted when the application is closed.
+- **Flet UI Cache**: The Flet GUI framework will extract its core UI engine and assets (such as fonts and shaders) into your user profile directory (`~/.flet/`). This is done only once to speed up subsequent launches and will remain on your system even after the application is closed.
+
 ## Credit
 - mizuki-py
 - Antigravity (Gemini,Claude)

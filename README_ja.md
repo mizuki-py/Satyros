@@ -48,6 +48,12 @@ SatyrosをスタンドアロンのEXEファイルにコンパイルするには�
 flet pack main.py --icon icon.ico --name Satyros --product-name Satyros --product-version 0.3.2 --file-version 0.3.2.0 --file-description Satyros --company-name Satyros --copyright "2026 Satyros" --add-data "assets:assets"
 ```
 
+## 実行時の注意事項
+
+コンパイル済みの実行ファイル（`Satyros.exe`）を起動した際、PC上に以下のようなファイルやフォルダが作成される仕様となっています。
+- **一時ファイル**: 実行ファイルの起動時に、内包されているPython環境や関連スクリプトがWindowsの一時フォルダ（`%TEMP%\_MEIxxxxxx`）に展開されます。これらはアプリケーション終了時に自動的に削除されます。
+- **Flet UIキャッシュ**: FletのUI描画エンジン（Flutter）が使用するフォントやシェーダーなどのコアファイルは、起動の高速化のためユーザーディレクトリ配下（`~/.flet/`）に展開されます。これらは次回以降の起動のためにアプリ終了後もシステム上に残ります。
+
 ## クレジット
 - mizuki-py
 - Antigravity(Gemini, Claude)
