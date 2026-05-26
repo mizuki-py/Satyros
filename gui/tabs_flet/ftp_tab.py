@@ -8,6 +8,8 @@ class FTPTab:
         self.backend_runner = backend_runner
         self.ftp_running = False
         self.sftp_running = False
+        import collections
+        self.transfers = collections.deque(maxlen=50)
 
     def build(self):
         ips = get_local_ips()
@@ -62,10 +64,8 @@ class FTPTab:
     def append_transfer(self, filename, ip, status):
         import datetime
         now = datetime.datetime.now().strftime("%H:%M:%S")
-        self.transfers_col.controls.insert(0, ft.Text(f"[{now}] {ip} {status} '{filename}'"))
-        if len(self.transfers_col.controls) > 50:
-            self.transfers_col.controls.pop()
-        self.page.update()
+        self.transfers.appendleft(ft.Text(f"[{now}] {ip} {status} '{filename}'"))
+        self.transfers_col.controls = list(self.transfers)
 
     def _update_auth(self, srv_name):
         srv = getattr(self.backend_runner, srv_name)

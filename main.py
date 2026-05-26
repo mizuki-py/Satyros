@@ -10,7 +10,7 @@ def setup_flet_view():
             if not os.path.exists(extract_dir):
                 with zipfile.ZipFile(bundle_zip, 'r') as zip_ref:
                     zip_ref.extractall(extract_dir)
-            os.environ['FLET_VIEW_PATH'] = os.path.join(extract_dir, 'flet')
+            os.environ['FLET_VIEW_PATH'] = extract_dir
 
 setup_flet_view()
 

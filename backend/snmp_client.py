@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 class AsyncSNMPClient:
     def __init__(self):
-        pass
+        self.engine = SnmpEngine()
 
     async def get(self, target_ip, oid, port=161, community='public', version=2, v3_user=None, v3_auth=None, v3_priv=None):
         if version == 3 and v3_user:
@@ -25,7 +25,7 @@ class AsyncSNMPClient:
             auth_data = CommunityData(community, mpModel=mp_model)
         
         errorIndication, errorStatus, errorIndex, varBinds = await get_cmd(
-            SnmpEngine(),
+            self.engine,
             auth_data,
             await UdpTransportTarget.create((target_ip, port)),
             ContextData(),
@@ -60,7 +60,7 @@ class AsyncSNMPClient:
         results = []
 
         async for errorIndication, errorStatus, errorIndex, varBinds in walk_cmd(
-            SnmpEngine(),
+            self.engine,
             auth_data,
             await UdpTransportTarget.create((target_ip, port)),
             ContextData(),

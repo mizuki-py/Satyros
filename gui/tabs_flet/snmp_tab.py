@@ -177,8 +177,6 @@ class SNMPTab:
         
         if len(self.trap_list.controls) > 100:
             self.trap_list.controls.pop(0)
-            
-        self.page.update()
 
     def toggle_server(self, e):
         self.running = not self.running
@@ -226,25 +224,47 @@ class SNMPTab:
 
     def do_get(self, e):
         self.mgr_list.controls.clear()
+        self.btn_get.disabled = True
+        self.btn_walk.disabled = True
         self.page.update()
-        try:
-            kwargs = self._get_mgr_args()
-            future = asyncio.run_coroutine_threadsafe(self.client.get(**kwargs), self.backend_runner.loop)
-            res = future.result(timeout=5)
-            self._display_mgr_result(res)
-        except Exception as ex:
-            self._display_mgr_result({"error": str(ex)})
+        
+        def _thread():
+            try:
+                kwargs = self._get_mgr_args()
+                future = asyncio.run_coroutine_threadsafe(self.client.get(**kwargs), self.backend_runner.loop)
+                res = future.result(timeout=5)
+                self._display_mgr_result(res)
+            except Exception as ex:
+                self._display_mgr_result({"error": str(ex)})
+            finally:
+                self.btn_get.disabled = False
+                self.btn_walk.disabled = False
+                self.page.update()
+                
+        import threading
+        threading.Thread(target=_thread, daemon=True).start()
 
     def do_walk(self, e):
         self.mgr_list.controls.clear()
+        self.btn_get.disabled = True
+        self.btn_walk.disabled = True
         self.page.update()
-        try:
-            kwargs = self._get_mgr_args()
-            future = asyncio.run_coroutine_threadsafe(self.client.walk(**kwargs), self.backend_runner.loop)
-            res = future.result(timeout=10)
-            self._display_mgr_result(res)
-        except Exception as ex:
-            self._display_mgr_result({"error": str(ex)})
+        
+        def _thread():
+            try:
+                kwargs = self._get_mgr_args()
+                future = asyncio.run_coroutine_threadsafe(self.client.walk(**kwargs), self.backend_runner.loop)
+                res = future.result(timeout=10)
+                self._display_mgr_result(res)
+            except Exception as ex:
+                self._display_mgr_result({"error": str(ex)})
+            finally:
+                self.btn_get.disabled = False
+                self.btn_walk.disabled = False
+                self.page.update()
+                
+        import threading
+        threading.Thread(target=_thread, daemon=True).start()
 
     def _display_mgr_result(self, res):
         now = datetime.datetime.now().strftime("%H:%M:%S")

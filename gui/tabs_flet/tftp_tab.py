@@ -17,8 +17,6 @@ class TFTPTab:
         self.server_transfers_col.controls.clear()
         for k, v in self.active_transfers.items():
             self.server_transfers_col.controls.append(ft.Text(f"{k}: {v} bytes"))
-            
-        self.page.update()
 
     def build(self):
         # Server Controls

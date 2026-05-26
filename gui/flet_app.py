@@ -90,6 +90,7 @@ def main(page: ft.Page, backend_runner, log_queue):
 
     # Queue processing loop
     def check_queue():
+        updates = False
         while True:
             import queue
             try:
@@ -104,9 +105,11 @@ def main(page: ft.Page, backend_runner, log_queue):
                     ftp_tab.append_transfer(msg["filename"], msg["ip"], msg["status"])
                 elif msg["type"] == "error":
                     page.snack_bar = ft.SnackBar(ft.Text(msg["message"], color=ft.Colors.ERROR), open=True)
-                    page.update()
+                updates = True
             except queue.Empty:
                 break
+        if updates:
+            page.update()
                 
     import threading
     import time

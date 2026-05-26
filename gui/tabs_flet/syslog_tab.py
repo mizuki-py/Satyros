@@ -85,6 +85,24 @@ class SyslogTab:
         self._render_table()
         return res
 
+    def _create_log_item(self, row):
+        color = None
+        if row['sev'] <= 3: # Emergency, Alert, Critical, Error
+            color = ft.Colors.RED if hasattr(ft.Colors, 'RED') else "red"
+        elif row['sev'] == 4: # Warning
+            color = ft.Colors.YELLOW if hasattr(ft.Colors, 'YELLOW') else "yellow"
+            
+        return ft.Container(
+            content=ft.Column([
+                ft.Text(f"Time: {row['time']} | Source IP: {row['ip']} | Severity: {row['sev']}", weight="bold", color=color),
+                ft.Text(row['msg'], selectable=True, color=color)
+            ]),
+            padding=10,
+            border=ft.Border(
+                bottom=ft.BorderSide(1, "#444444")
+            )
+        )
+
     def _render_table(self):
         with self.lock:
             self.log_list.controls.clear()
@@ -96,22 +114,7 @@ class SyslogTab:
                 if self.search_filter and self.search_filter not in row['msg'].lower() and self.search_filter not in row['ip']:
                     continue
                     
-                color = None
-                if row['sev'] <= 2: # Emergency, Alert, Critical
-                    color = ft.Colors.RED if hasattr(ft.Colors, 'RED') else "red"
-                elif row['sev'] == 4: # Warning
-                    color = ft.Colors.YELLOW if hasattr(ft.Colors, 'YELLOW') else "yellow"
-                    
-                log_item = ft.Container(
-                    content=ft.Column([
-                        ft.Text(f"Time: {row['time']} | Source IP: {row['ip']} | Severity: {row['sev']}", weight="bold", color=color),
-                        ft.Text(row['msg'], selectable=True, color=color)
-                    ]),
-                    padding=10,
-                    border=ft.Border(
-                        bottom=ft.BorderSide(1, "#444444")
-                    )
-                )
+                log_item = self._create_log_item(row)
                 self.log_list.controls.append(log_item)
                 
             self.page.update()
@@ -119,12 +122,21 @@ class SyslogTab:
     def append_log(self, ip, msg, severity):
         msg = msg.replace('\r', '').replace('\n', ' ').strip()
         now = datetime.datetime.now().strftime("%H:%M:%S")
-        self.logs.append({"time": now, "ip": ip, "sev": severity, "msg": msg})
+        row = {"time": now, "ip": ip, "sev": severity, "msg": msg}
+        self.logs.append(row)
         
         if len(self.logs) > 1000: # Keep maximum 1000 logs in memory
             self.logs.pop(0)
             
-        self._render_table()
+        with self.lock:
+            if self.search_filter and self.search_filter not in msg.lower() and self.search_filter not in ip:
+                return
+            
+            log_item = self._create_log_item(row)
+            self.log_list.controls.append(log_item)
+            
+            if len(self.log_list.controls) > 100:
+                self.log_list.controls.pop(0)
 
     def toggle_server(self, e):
         self.running = not self.running
