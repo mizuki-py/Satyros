@@ -105,7 +105,8 @@ def compress_flet_client_dir(bin_dir, zip_filename):
         for root, dirs, files in os.walk(os.path.join(bin_dir, "flet")):
             for file in files:
                 file_path = os.path.join(root, file)
-                zipf.write(file_path, os.path.relpath(file_path, os.path.join(bin_dir, "flet")))
+                # Preserve the 'flet' directory prefix in the zip!
+                zipf.write(file_path, os.path.relpath(file_path, bin_dir))
 
 
 def main():

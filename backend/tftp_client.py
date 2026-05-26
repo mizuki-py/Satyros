@@ -23,7 +23,8 @@ class TFTPClient:
     def _get_file_sync(self, host, port, remote_filename, local_filename, progress_cb):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.settimeout(5.0)
-        req = struct.pack(f">h{len(remote_filename)}sB5sB", self.OP_RRQ, remote_filename.encode(), 0, b"octet", 0)
+        encoded_filename = remote_filename.encode()
+        req = struct.pack(f">h{len(encoded_filename)}sB5sB", self.OP_RRQ, encoded_filename, 0, b"octet", 0)
         sock.sendto(req, (host, port))
 
         expected_block = 1
@@ -68,7 +69,8 @@ class TFTPClient:
     def _put_file_sync(self, host, port, local_filename, remote_filename, progress_cb):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.settimeout(5.0)
-        req = struct.pack(f">h{len(remote_filename)}sB5sB", self.OP_WRQ, remote_filename.encode(), 0, b"octet", 0)
+        encoded_filename = remote_filename.encode()
+        req = struct.pack(f">h{len(encoded_filename)}sB5sB", self.OP_WRQ, encoded_filename, 0, b"octet", 0)
         sock.sendto(req, (host, port))
         
         expected_block = 0

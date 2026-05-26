@@ -52,7 +52,7 @@ class AsyncSNMPServer:
         else:
             logger.info(f"Trap Received from {source_ip}: {msg}")
 
-    async def start(self, v3_user=None, v3_auth=None, v3_priv=None):
+    async def start(self, v3_user=None, v3_auth=None, v3_priv=None, community='public'):
         try:
             if self.snmpEngine:
                 self.snmpEngine.transportDispatcher.closeDispatcher()
@@ -64,8 +64,8 @@ class AsyncSNMPServer:
                 udp.UdpTransport().openServerMode((self.host, self.port))
             )
             
-            # Allow SNMPv1 / v2c traps with community 'public'
-            config.addV1System(self.snmpEngine, 'my-area', 'public')
+            # Allow SNMPv1 / v2c traps with specified community
+            config.addV1System(self.snmpEngine, 'my-area', community)
 
             # Optional SNMPv3 Configuration
             if v3_user:

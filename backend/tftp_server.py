@@ -15,33 +15,6 @@ class AsyncTFTPServer:
         self.root_dir = root_dir
         self.callback = callback
         self.transport = None
-        
-        # Monkey patch sanitize_fname to use our root_dir instead of Path.cwd()
-        self._original_sanitize = py3tftp.file_io.sanitize_fname
-        
-        def custom_sanitize_fname(fname):
-            # Decode bytes to string, normalize backslashes to forward slashes
-            path_str = os.fsdecode(fname).replace('\\', '/')
-            # Strip leading slashes to prevent absolute path injection, 
-            # instead of using lstrip('./') which deletes dots (fixing dotfile bug)
-            path_str = path_str.lstrip('/')
-            
-            try:
-                # Use strict=False to resolve without requiring the file to exist (for PUT)
-                abs_path = (Path(self.root_dir) / path_str).resolve(strict=False)
-                root_path = Path(self.root_dir).resolve(strict=True)
-                
-                # Check boundary using resolved paths to prevent symlink / ../ escapes
-                abs_path.relative_to(root_path)
-            except (ValueError, FileNotFoundError, RuntimeError):
-                raise FileNotFoundError
-                
-            if abs_path.is_reserved():
-                raise FileNotFoundError
-                
-            return abs_path
-
-        py3tftp.file_io.sanitize_fname = custom_sanitize_fname
 
     async def start(self):
         loop = asyncio.get_running_loop()
@@ -55,7 +28,25 @@ class AsyncTFTPServer:
                 file_handler_cls = self_.select_file_handler(first_packet)
 
                 def my_file_handler_cls(filename, opts):
-                    handler = file_handler_cls(filename, opts)
+                    def custom_sanitize_fname(fname):
+                        path_str = os.fsdecode(fname).replace('\\', '/').lstrip('/')
+                        try:
+                            abs_path = (Path(self.root_dir) / path_str).resolve(strict=False)
+                            root_path = Path(self.root_dir).resolve(strict=True)
+                            abs_path.relative_to(root_path)
+                        except (ValueError, FileNotFoundError, RuntimeError):
+                            raise FileNotFoundError
+                        if abs_path.is_reserved():
+                            raise FileNotFoundError
+                        return abs_path
+
+                    orig_sanitize = py3tftp.file_io.sanitize_fname
+                    py3tftp.file_io.sanitize_fname = custom_sanitize_fname
+                    try:
+                        handler = file_handler_cls(filename, opts)
+                    finally:
+                        py3tftp.file_io.sanitize_fname = orig_sanitize
+
                     ip = addr[0]
                     fname_str = filename.decode(errors='replace') if isinstance(filename, bytes) else str(filename)
                     

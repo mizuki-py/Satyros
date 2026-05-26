@@ -36,9 +36,12 @@ def make_sftp_server_class(root_dir, allow_write):
             super().__init__(flags)
             self.readfile = None
             self.writefile = None
-            if flags & os.O_WRONLY or flags & os.O_RDWR:
-                self.writefile = open(path, "ab" if flags & os.O_APPEND else "wb")
-            if flags & os.O_RDONLY or flags & os.O_RDWR:
+            has_write = (flags & os.O_WRONLY) or (flags & os.O_RDWR)
+            has_read = (flags & os.O_RDWR) or ((flags & (os.O_WRONLY | os.O_RDWR)) == 0)
+            
+            if has_write:
+                self.writefile = open(path, "ab" if (flags & os.O_APPEND) else "wb")
+            if has_read:
                 self.readfile = open(path, "rb")
 
         def read(self, offset, length):

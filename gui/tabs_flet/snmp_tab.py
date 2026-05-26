@@ -19,6 +19,7 @@ class SNMPTab:
         # --- Trap Receiver Section ---
         self.trap_ip_input = ft.Dropdown(label="Listen IP", value="0.0.0.0", options=[ft.dropdown.Option(ip) for ip in ips], expand=True)
         self.trap_port_input = ft.TextField(label="Port", value="162", width=100)
+        self.trap_community = ft.TextField(label="Community", value="public", width=150)
         self.trap_v3_user = ft.TextField(label="v3 User", width=150)
         self.trap_v3_auth = ft.TextField(label="v3 Auth Key", width=150, password=True, can_reveal_password=True)
         self.trap_v3_priv = ft.TextField(label="v3 Priv Key", width=150, password=True, can_reveal_password=True)
@@ -52,7 +53,7 @@ class SNMPTab:
         self.btn_export = ft.ElevatedButton(content="Export CSV", on_click=handle_export)
 
         trap_controls = ft.Row([
-            self.trap_ip_input, self.trap_port_input, 
+            self.trap_ip_input, self.trap_port_input, self.trap_community,
             self.btn_toggle
         ])
         export_controls = ft.Row([
@@ -194,6 +195,8 @@ class SNMPTab:
                 kwargs['v3_auth'] = self.trap_v3_auth.value
             if self.trap_v3_priv.value:
                 kwargs['v3_priv'] = self.trap_v3_priv.value
+            if self.trap_community.value:
+                kwargs['community'] = self.trap_community.value
             self.backend_runner.start_server('snmp_srv', self.trap_ip_input.value, self.trap_port_input.value, **kwargs)
         else:
             if isinstance(self.btn_toggle.content, ft.Text):
