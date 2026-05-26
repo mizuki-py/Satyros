@@ -55,6 +55,7 @@ class TFTPTab:
 
         # Client Controls
         self.client_ip = ft.TextField(label="Target IP", value="127.0.0.1", expand=True)
+        self.client_port = ft.TextField(label="Port", value="69", width=100)
         self.client_remote = ft.TextField(label="Remote File", expand=True)
         self.client_local = ft.TextField(label="Local File", value=os.path.join(desktop_path, "local_file.txt"), expand=True)
         self.client_mode = ft.Dropdown(
@@ -72,7 +73,7 @@ class TFTPTab:
                 padding=20,
                 content=ft.Column([
                     ft.Text("Client Settings", size=20, weight="bold"),
-                    ft.Row([self.client_ip, self.client_mode]),
+                    ft.Row([self.client_ip, self.client_port, self.client_mode]),
                     ft.Row([self.client_remote]),
                     ft.Row([
                         self.client_local
@@ -118,6 +119,10 @@ class TFTPTab:
         from backend.tftp_client import TFTPClient
         
         host = self.client_ip.value
+        try:
+            port = int(self.client_port.value)
+        except ValueError:
+            port = 69
         remote = self.client_remote.value
         local = self.client_local.value
         mode = self.client_mode.value
@@ -137,9 +142,9 @@ class TFTPTab:
             try:
                 loop = self.backend_runner.loop
                 if mode == "Get":
-                    coro = client.get_file(host, 69, remote, local, progress_cb)
+                    coro = client.get_file(host, port, remote, local, progress_cb)
                 else:
-                    coro = client.put_file(host, 69, local, remote, progress_cb)
+                    coro = client.put_file(host, port, local, remote, progress_cb)
                 asyncio.run_coroutine_threadsafe(coro, loop).result()
             except Exception as ex:
                 self.client_status.value = f"Error: {ex}"

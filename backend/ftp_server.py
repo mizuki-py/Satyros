@@ -32,9 +32,9 @@ def generate_self_signed_cert(cert_path, key_path):
     ).serial_number(
         x509.random_serial_number()
     ).not_valid_before(
-        datetime.datetime.utcnow()
+        datetime.datetime.now(datetime.timezone.utc)
     ).not_valid_after(
-        datetime.datetime.utcnow() + datetime.timedelta(days=365)
+        datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=365)
     ).sign(key, hashes.SHA256())
     
     with open(key_path, "wb") as f:
