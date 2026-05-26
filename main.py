@@ -57,7 +57,19 @@ class BackendRunner:
     def start_server(self, srv_name, host, port, root_dir=None, **kwargs):
         srv = getattr(self, srv_name)
         srv.host = host
-        srv.port = int(port)
+        
+        try:
+            parsed_port = int(port)
+            if not (1 <= parsed_port <= 65535):
+                raise ValueError("Port must be between 1 and 65535")
+            srv.port = parsed_port
+        except ValueError as e:
+            msg = f"Invalid port for {srv_name}: {e}"
+            print(msg)
+            self.log_queue.put({"type": "error", "message": msg})
+            # Let the GUI button state be reset if needed, but we don't start the server
+            return
+
         if root_dir is not None:
             srv.root_dir = root_dir
             

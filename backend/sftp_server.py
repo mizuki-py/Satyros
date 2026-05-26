@@ -170,10 +170,14 @@ class AsyncSFTPServer:
             self.server_socket.settimeout(1.0)
             logger.info(f"SFTP server started at {self.host}:{self.port} with user {self.username}")
             
+            # Generate host key once per server instance to avoid CPU spikes
+            # and allow clients to trust/pin the key (V-06)
+            host_key = paramiko.RSAKey.generate(2048)
+            
             def handle_client(client_conn):
                 try:
                     transport = paramiko.Transport(client_conn)
-                    transport.add_server_key(paramiko.RSAKey.generate(2048))
+                    transport.add_server_key(host_key)
                     
                     sftp_cls = make_sftp_server_class(self.root_dir, self.allow_write)
                     transport.set_subsystem_handler("sftp", paramiko.SFTPServer, sftp_cls)
