@@ -34,34 +34,26 @@ def make_sftp_server_class(root_dir, allow_write):
     class StubSFTPHandle(paramiko.SFTPHandle):
         def __init__(self, flags, path):
             super().__init__(flags)
-            self.readfile = None
-            self.writefile = None
-            has_write = (flags & os.O_WRONLY) or (flags & os.O_RDWR)
-            has_read = (flags & os.O_RDWR) or ((flags & (os.O_WRONLY | os.O_RDWR)) == 0)
-            
-            if has_write:
-                self.writefile = open(path, "ab" if (flags & os.O_APPEND) else "wb")
-            if has_read:
-                self.readfile = open(path, "rb")
+            os_flags = flags | getattr(os, 'O_BINARY', 0)
+            self.fd = os.open(path, os_flags, 0o666)
+            self.flags = flags
 
         def read(self, offset, length):
-            if not self.readfile:
+            if (self.flags & os.O_WRONLY) and not (self.flags & os.O_RDWR):
                 return paramiko.SFTP_PERMISSION_DENIED
-            self.readfile.seek(offset)
-            return self.readfile.read(length)
+            os.lseek(self.fd, offset, os.SEEK_SET)
+            return os.read(self.fd, length)
 
         def write(self, offset, data):
-            if not self.writefile:
+            if (self.flags & (os.O_WRONLY | os.O_RDWR)) == 0:
                 return paramiko.SFTP_PERMISSION_DENIED
-            self.writefile.seek(offset)
-            self.writefile.write(data)
-            return len(data)
+            if not (self.flags & os.O_APPEND):
+                os.lseek(self.fd, offset, os.SEEK_SET)
+            os.write(self.fd, data)
+            return paramiko.SFTP_OK
 
         def close(self):
-            if self.readfile:
-                self.readfile.close()
-            if self.writefile:
-                self.writefile.close()
+            os.close(self.fd)
 
     class SFTPInterface(paramiko.SFTPServerInterface):
         def _realpath(self, path):

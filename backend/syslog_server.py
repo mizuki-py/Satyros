@@ -26,6 +26,8 @@ class SyslogProtocol(asyncio.DatagramProtocol):
 
     def datagram_received(self, data, addr):
         msg = data.decode(errors='replace').replace('\x00', '').replace('\r', '').replace('\n', ' ').strip()
+        if not msg:
+            return
         ip = addr[0]
         
         # Parse Severity

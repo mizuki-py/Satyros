@@ -58,6 +58,11 @@ class TFTPClient:
                         
         except Exception as e:
             logger.error(f"TFTP Get failed: {e}")
+            if os.path.exists(local_filename):
+                try:
+                    os.remove(local_filename)
+                except OSError:
+                    pass
             raise
         finally:
             sock.close()
