@@ -32,8 +32,10 @@ class SyslogTab:
             if not path:
                 return
             try:
+                with self.lock:
+                    logs_copy = list(self.logs)
                 with open(path, 'w', encoding='utf-8') as f:
-                    for row in self.logs:
+                    for row in logs_copy:
                         f.write(f"{row['time']} | {row['ip']} | Sev: {row['sev']} | {row['msg']}\n")
                 self.page.snack_bar = ft.SnackBar(ft.Text(f"Saved to {path}"), open=True)
                 self.page.update()
@@ -123,12 +125,12 @@ class SyslogTab:
         msg = msg.replace('\r', '').replace('\n', ' ').strip()
         now = datetime.datetime.now().strftime("%H:%M:%S")
         row = {"time": now, "ip": ip, "sev": severity, "msg": msg}
-        self.logs.append(row)
         
-        if len(self.logs) > 1000: # Keep maximum 1000 logs in memory
-            self.logs.pop(0)
-            
         with self.lock:
+            self.logs.append(row)
+            if len(self.logs) > 1000: # Keep maximum 1000 logs in memory
+                self.logs.pop(0)
+            
             if self.search_filter and self.search_filter not in msg.lower() and self.search_filter not in ip:
                 return
             

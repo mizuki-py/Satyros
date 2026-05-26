@@ -22,17 +22,33 @@ class TFTPClient:
 
     def _get_file_sync(self, host, port, remote_filename, local_filename, progress_cb):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.settimeout(5.0)
+        sock.settimeout(1.0) # Set timeout to 1.0 second for active retransmissions
         encoded_filename = remote_filename.encode()
         req = struct.pack(f">h{len(encoded_filename)}sB5sB", self.OP_RRQ, encoded_filename, 0, b"octet", 0)
-        sock.sendto(req, (host, port))
+        
+        last_packet_sent = req
+        last_addr = (host, port)
+        sock.sendto(last_packet_sent, last_addr)
 
         expected_block = 1
         bytes_received = 0
+        retries = 0
+        MAX_RETRIES = 5
+        
         try:
             with open(local_filename, "wb") as f:
                 while True:
-                    data, addr = sock.recvfrom(4096)
+                    try:
+                        data, addr = sock.recvfrom(4096)
+                        retries = 0 # Reset retries on successful packet receipt
+                    except socket.timeout:
+                        retries += 1
+                        if retries > MAX_RETRIES:
+                            raise Exception("TFTP transfer timed out (max retries exceeded)")
+                        logger.warning(f"Timeout occurred, retransmitting last packet (retry {retries}/{MAX_RETRIES})")
+                        sock.sendto(last_packet_sent, last_addr)
+                        continue
+
                     opcode, = struct.unpack(">h", data[:2])
                     
                     if opcode == self.OP_DATA:
@@ -41,19 +57,24 @@ class TFTPClient:
                             f.write(data[4:])
                             bytes_received += len(data[4:])
                             if progress_cb:
-                                progress_cb(bytes_received, False) # (bytes, is_done)
+                                progress_cb(bytes_received, False)
                             
                             ack = struct.pack(">hh", self.OP_ACK, block)
+                            last_packet_sent = ack
+                            last_addr = addr
                             sock.sendto(ack, addr)
                             expected_block = (expected_block + 1) & 0xFFFF
                             
                             if len(data[4:]) < 512:
                                 if progress_cb: progress_cb(bytes_received, True)
                                 break
+                        elif block == (expected_block - 1) & 0xFFFF:
+                            # Re-send ACK for duplicate block (Bug 19)
+                            ack = struct.pack(">hh", self.OP_ACK, block)
+                            sock.sendto(ack, addr)
                     elif opcode == self.OP_ERROR:
                         code, = struct.unpack(">h", data[2:4])
                         msg = data[4:-1]
-                        logger.error(f"TFTP Error {code}: {msg.decode(errors='ignore')}")
                         raise Exception(f"TFTP Error {code}: {msg.decode(errors='ignore')}")
                         
         except Exception as e:
@@ -73,41 +94,67 @@ class TFTPClient:
 
     def _put_file_sync(self, host, port, local_filename, remote_filename, progress_cb):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.settimeout(5.0)
+        sock.settimeout(1.0) # Set timeout to 1.0 second for active retransmissions
         encoded_filename = remote_filename.encode()
         req = struct.pack(f">h{len(encoded_filename)}sB5sB", self.OP_WRQ, encoded_filename, 0, b"octet", 0)
-        sock.sendto(req, (host, port))
+        
+        last_packet_sent = req
+        last_addr = (host, port)
+        sock.sendto(last_packet_sent, last_addr)
         
         expected_block = 0
         bytes_sent = 0
+        retries = 0
+        MAX_RETRIES = 5
+        
         try:
             with open(local_filename, "rb") as f:
+                current_chunk = b""
+                is_last_chunk = False
+                
                 while True:
-                    data, addr = sock.recvfrom(4096)
+                    try:
+                        data, addr = sock.recvfrom(4096)
+                        retries = 0 # Reset retries on successful packet receipt
+                    except socket.timeout:
+                        retries += 1
+                        if retries > MAX_RETRIES:
+                            raise Exception("TFTP transfer timed out (max retries exceeded)")
+                        logger.warning(f"Timeout occurred, retransmitting last packet (retry {retries}/{MAX_RETRIES})")
+                        sock.sendto(last_packet_sent, last_addr)
+                        continue
+
                     opcode, = struct.unpack(">h", data[:2])
                     if opcode == self.OP_ACK:
                         block, = struct.unpack(">h", data[2:4])
                         if block == expected_block:
+                            if is_last_chunk:
+                                # Received final ACK for the last sent block
+                                if progress_cb:
+                                    progress_cb(bytes_sent, True)
+                                break
+                            
                             expected_block = (expected_block + 1) & 0xFFFF
-                            chunk = f.read(512)
-                            pkt = struct.pack(">hh", self.OP_DATA, expected_block) + chunk
+                            current_chunk = f.read(512)
+                            pkt = struct.pack(">hh", self.OP_DATA, expected_block) + current_chunk
+                            
+                            last_packet_sent = pkt
+                            last_addr = addr
                             sock.sendto(pkt, addr)
                             
-                            bytes_sent += len(chunk)
+                            bytes_sent += len(current_chunk)
                             if progress_cb:
                                 progress_cb(bytes_sent, False)
                                 
-                            if len(chunk) < 512:
-                                # wait for final ack
-                                data, _ = sock.recvfrom(4096)
-                                opcode, = struct.unpack(">h", data[:2])
-                                if opcode == self.OP_ACK and progress_cb:
-                                    progress_cb(bytes_sent, True)
-                                break
+                            if len(current_chunk) < 512:
+                                is_last_chunk = True
+                        elif block == (expected_block - 1) & 0xFFFF:
+                            # Server re-sent ACK for previous block, indicating it missed our last DATA packet
+                            logger.info(f"Duplicate ACK received for block {block}, retransmitting last packet")
+                            sock.sendto(last_packet_sent, last_addr)
                     elif opcode == self.OP_ERROR:
                         code, = struct.unpack(">h", data[2:4])
                         msg = data[4:-1]
-                        logger.error(f"TFTP Error {code}: {msg.decode(errors='ignore')}")
                         raise Exception(f"TFTP Error {code}: {msg.decode(errors='ignore')}")
                         
         except Exception as e:

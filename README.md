@@ -1,4 +1,4 @@
-# Satyros v0.3.2
+# Satyros v0.3.3
 
 Satyros is a networking tool. It provides a unified, graphical interface for running and managing essential network services (TFTP, FTP, SFTP, Syslog, and SNMP) in a single application.
 

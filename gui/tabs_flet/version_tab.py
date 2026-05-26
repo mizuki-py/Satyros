@@ -6,7 +6,7 @@ class VersionTab:
 
     def build(self):
         title = ft.Text("Satyros", size=32, weight="bold", color=ft.Colors.PRIMARY if hasattr(ft.Colors, 'PRIMARY') else "#4285F4")
-        subtitle = ft.Text("Version 0.3.2", size=18, color="#555555")
+        subtitle = ft.Text("Version 0.3.3", size=18, color="#555555")
         
         import sys
         

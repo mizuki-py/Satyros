@@ -136,8 +136,8 @@ def main():
         exe_path=exe_path,
         product_name="Satyros",
         file_description="Satyros",
-        product_version="0.3.2",
-        file_version="0.3.2.0",
+        product_version="0.3.3",
+        file_version="0.3.3.0",
         company_name="Satyros",
         copyright="2026 Satyros"
     )

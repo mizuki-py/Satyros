@@ -163,9 +163,20 @@ class AsyncSFTPServer:
             self.server_socket.settimeout(1.0)
             logger.info(f"SFTP server started at {self.host}:{self.port} with user {self.username}")
             
-            # Generate host key once per server instance to avoid CPU spikes
-            # and allow clients to trust/pin the key (V-06)
-            host_key = paramiko.RSAKey.generate(2048)
+            # Persistent host key to avoid MITM connection alerts across restarts (V-17)
+            from core.config import BASE_DIR
+            key_path = os.path.join(BASE_DIR, "data", "sftp_host_key.pem")
+            os.makedirs(os.path.dirname(key_path), exist_ok=True)
+            if os.path.exists(key_path):
+                try:
+                    host_key = paramiko.RSAKey(filename=key_path)
+                except Exception as e:
+                    logger.warning(f"Failed to load SFTP host key: {e}. Generating new host key...")
+                    host_key = paramiko.RSAKey.generate(2048)
+                    host_key.write_private_key_file(key_path)
+            else:
+                host_key = paramiko.RSAKey.generate(2048)
+                host_key.write_private_key_file(key_path)
             
             def handle_client(client_conn):
                 try:
@@ -196,10 +207,12 @@ class AsyncSFTPServer:
                 except socket.timeout:
                     continue
                 except Exception as e:
-                    logger.error(f"SFTP connection error: {e}")
+                    if self.running:
+                        logger.error(f"SFTP connection error: {e}")
         except Exception as e:
-            logger.error(f"SFTP server failed: {e}")
-            raise
+            if self.running:
+                logger.error(f"SFTP server failed: {e}")
+                raise
         finally:
             if self.server_socket:
                 self.server_socket.close()
@@ -211,6 +224,9 @@ class AsyncSFTPServer:
 
     async def stop(self):
         self.running = False
-        if self.thread:
-            pass
+        if self.server_socket:
+            try:
+                self.server_socket.close()
+            except Exception:
+                pass
         logger.info("SFTP server stopped")

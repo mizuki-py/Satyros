@@ -62,8 +62,13 @@ class NotifyingFTPHandler(FTPHandler):
         if hasattr(self.server, 'callback') and self.server.callback:
             self.server.callback(os.path.basename(file), self.remote_ip, "uploaded")
 
-class NotifyingTLS_FTPHandler(TLS_FTPHandler, NotifyingFTPHandler):
-    pass
+if TLS_FTPHandler is FTPHandler:
+    class NotifyingTLS_FTPHandler(NotifyingFTPHandler):
+        pass
+else:
+    class NotifyingTLS_FTPHandler(TLS_FTPHandler, NotifyingFTPHandler):
+        pass
+
 
 class AsyncFTPServer:
     def __init__(self, host='0.0.0.0', port=21, root_dir=DEFAULT_ROOT_DIR, callback=None):

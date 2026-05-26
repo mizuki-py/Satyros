@@ -1,4 +1,4 @@
-# Satyros v0.3.2
+# Satyros v0.3.3
 
 Satyrosはネットワーク管理ツールです。TFTP、FTP、SFTP、Syslog、SNMPといった主要なネットワークサービスを、単一のグラフィカルなインターフェースで実行・管理することができます。
 

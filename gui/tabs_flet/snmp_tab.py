@@ -12,6 +12,8 @@ class SNMPTab:
         self.running = False
         self.traps = []
         self.client = AsyncSNMPClient()
+        import threading
+        self.lock = threading.Lock()
 
     def build(self):
         ips = get_local_ips()
@@ -39,10 +41,12 @@ class SNMPTab:
                 return
             import csv
             try:
+                with self.lock:
+                    traps_copy = list(self.traps)
                 with open(path, 'w', newline='', encoding='utf-8') as f:
                     writer = csv.writer(f)
                     writer.writerow(["Time", "Source IP", "Trap Content"])
-                    for row in self.traps:
+                    for row in traps_copy:
                         writer.writerow([row['time'], row['ip'], row['msg']])
                 self.page.snack_bar = ft.SnackBar(ft.Text(f"Saved to {path}"), open=True)
                 self.page.update()
@@ -139,7 +143,9 @@ class SNMPTab:
         res = ft.Column([trap_card, mgr_card], expand=True)
         
         # Restore traps on rebuild
-        for i, t in enumerate(self.traps):
+        with self.lock:
+            traps_copy = list(self.traps)
+        for i, t in enumerate(traps_copy):
             bg_color = ft.Colors.SURFACE_CONTAINER if i % 2 == 0 else ft.Colors.TRANSPARENT
             self.trap_list.controls.append(
                 ft.Container(
@@ -159,24 +165,28 @@ class SNMPTab:
     def append_trap(self, ip, msg):
         msg = msg.replace('\r', '').replace('\n', ' ').strip()
         now = datetime.datetime.now().strftime("%H:%M:%S")
-        self.traps.append({"time": now, "ip": ip, "msg": msg})
         
-        bg_color = ft.Colors.SURFACE_CONTAINER if len(self.traps) % 2 != 0 else ft.Colors.TRANSPARENT
-        self.trap_list.controls.append(
-            ft.Container(
-                content=ft.Column([
-                    ft.Text(f"Time: {now} | Source IP: {ip}", weight="bold", color=ft.Colors.BLUE_300),
-                    ft.Text(msg, selectable=True)
-                ]),
-                padding=10,
-                bgcolor=bg_color,
-                border=ft.Border(bottom=ft.BorderSide(1, "#444444")),
-                border_radius=5
+        with self.lock:
+            self.traps.append({"time": now, "ip": ip, "msg": msg})
+            if len(self.traps) > 1000: # Limit memory growth
+                self.traps.pop(0)
+            
+            bg_color = ft.Colors.SURFACE_CONTAINER if len(self.traps) % 2 != 0 else ft.Colors.TRANSPARENT
+            self.trap_list.controls.append(
+                ft.Container(
+                    content=ft.Column([
+                        ft.Text(f"Time: {now} | Source IP: {ip}", weight="bold", color=ft.Colors.BLUE_300),
+                        ft.Text(msg, selectable=True)
+                    ]),
+                    padding=10,
+                    bgcolor=bg_color,
+                    border=ft.Border(bottom=ft.BorderSide(1, "#444444")),
+                    border_radius=5
+                )
             )
-        )
-        
-        if len(self.trap_list.controls) > 100:
-            self.trap_list.controls.pop(0)
+            
+            if len(self.trap_list.controls) > 100:
+                self.trap_list.controls.pop(0)
 
     def toggle_server(self, e):
         self.running = not self.running
@@ -229,12 +239,15 @@ class SNMPTab:
         self.page.update()
         
         def _thread():
+            future = None
             try:
                 kwargs = self._get_mgr_args()
                 future = asyncio.run_coroutine_threadsafe(self.client.get(**kwargs), self.backend_runner.loop)
                 res = future.result(timeout=5)
                 self._display_mgr_result(res)
             except Exception as ex:
+                if future:
+                    future.cancel()
                 self._display_mgr_result({"error": str(ex)})
             finally:
                 self.btn_get.disabled = False
@@ -251,12 +264,15 @@ class SNMPTab:
         self.page.update()
         
         def _thread():
+            future = None
             try:
                 kwargs = self._get_mgr_args()
                 future = asyncio.run_coroutine_threadsafe(self.client.walk(**kwargs), self.backend_runner.loop)
                 res = future.result(timeout=10)
                 self._display_mgr_result(res)
             except Exception as ex:
+                if future:
+                    future.cancel()
                 self._display_mgr_result({"error": str(ex)})
             finally:
                 self.btn_get.disabled = False
