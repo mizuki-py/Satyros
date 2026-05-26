@@ -3,4 +3,5 @@ py3tftp
 pyftpdlib
 paramiko
 cryptography
+pyOpenSSL
 pysnmp

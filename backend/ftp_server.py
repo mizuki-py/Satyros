@@ -10,7 +10,12 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 
 from pyftpdlib.authorizers import DummyAuthorizer
-from pyftpdlib.handlers import FTPHandler, TLS_FTPHandler
+from pyftpdlib.handlers import FTPHandler
+try:
+    from pyftpdlib.handlers import TLS_FTPHandler
+except ImportError:
+    TLS_FTPHandler = FTPHandler
+    logger.warning("pyOpenSSL is not installed. FTPS will not be available.")
 from pyftpdlib.servers import FTPServer
 from core.config import DEFAULT_ROOT_DIR
 
