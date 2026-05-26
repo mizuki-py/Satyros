@@ -20,14 +20,25 @@ class AsyncTFTPServer:
         self._original_sanitize = py3tftp.file_io.sanitize_fname
         
         def custom_sanitize_fname(fname):
-            path = os.fsdecode(fname).lstrip('./')
-            abs_path = Path(self.root_dir) / path
+            # Decode bytes to string, normalize backslashes to forward slashes
+            path_str = os.fsdecode(fname).replace('\\', '/')
+            # Strip leading slashes to prevent absolute path injection, 
+            # instead of using lstrip('./') which deletes dots (fixing dotfile bug)
+            path_str = path_str.lstrip('/')
+            
             try:
-                abs_path.relative_to(Path(self.root_dir))
-            except ValueError:
+                # Use strict=False to resolve without requiring the file to exist (for PUT)
+                abs_path = (Path(self.root_dir) / path_str).resolve(strict=False)
+                root_path = Path(self.root_dir).resolve(strict=True)
+                
+                # Check boundary using resolved paths to prevent symlink / ../ escapes
+                abs_path.relative_to(root_path)
+            except (ValueError, FileNotFoundError, RuntimeError):
                 raise FileNotFoundError
+                
             if abs_path.is_reserved():
                 raise FileNotFoundError
+                
             return abs_path
 
         py3tftp.file_io.sanitize_fname = custom_sanitize_fname

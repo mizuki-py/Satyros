@@ -26,10 +26,8 @@ class DummySFTPAuth(paramiko.ServerInterface):
         return "password"
 
     def check_channel_subsystem_request(self, channel, name):
-        if name == b"sftp":
-            name = "sftp"
-        if name == "sftp":
-            return super().check_channel_subsystem_request(channel, name)
+        if name == b"sftp" or name == "sftp":
+            return True
         return False
 
 def make_sftp_server_class(root_dir, allow_write):
