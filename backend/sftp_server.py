@@ -64,7 +64,16 @@ def make_sftp_server_class(root_dir, allow_write):
 
     class SFTPInterface(paramiko.SFTPServerInterface):
         def _realpath(self, path):
-            return os.path.normpath(os.path.join(root_dir, path.lstrip('/')))
+            # Normalize separators and strip leading slashes/backslashes
+            # to prevent absolute path injection on Windows (V-02)
+            clean = path.replace('\\', '/').lstrip('/')
+            # Join with root and normalize to resolve ../ sequences (V-01)
+            resolved = os.path.normpath(os.path.join(root_dir, clean))
+            # Boundary check: ensure the resolved path stays within root_dir
+            root_normalized = os.path.normpath(root_dir)
+            if not (resolved == root_normalized or resolved.startswith(root_normalized + os.sep)):
+                raise PermissionError("Access denied: path escapes root directory")
+            return resolved
 
         def list_folder(self, path):
             path = self._realpath(path)
