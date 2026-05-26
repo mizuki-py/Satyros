@@ -26,7 +26,7 @@ class VersionTab:
         except ImportError:
             pyftpdlib_ver = 'Not Installed'
         paramiko_ver = get_ver('paramiko')
-        openssl_ver = get_ver('OpenSSL')
+        crypto_ver = get_ver('cryptography')
         pysnmp_ver = get_ver('pysnmp')
         
         libraries = ft.Column([
@@ -35,7 +35,7 @@ class VersionTab:
             ft.Text(f"• py3tftp {py3tftp_ver} (TFTP Server)"),
             ft.Text(f"• pyftpdlib {pyftpdlib_ver} (FTP/FTPS Server)"),
             ft.Text(f"• paramiko {paramiko_ver} (SFTP Server)"),
-            ft.Text(f"• pyOpenSSL {openssl_ver} (TLS Certificate Generation)"),
+            ft.Text(f"• cryptography {crypto_ver} (TLS Certificate Generation)"),
             ft.Text(f"• pysnmp {pysnmp_ver} (SNMP Manager & Trap Receiver)")
         ])
         
