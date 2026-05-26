@@ -33,7 +33,7 @@ class AsyncSNMPServer:
             except Exception:
                 resolved_varbinds.append(f'{name.prettyPrint()} = {val.prettyPrint()}')
                 
-        msg = ", ".join(resolved_varbinds)
+        msg = ", ".join(resolved_varbinds).replace('\r', '').replace('\n', ' ')
         
         source_ip = "Unknown IP"
         try:
