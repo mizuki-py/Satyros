@@ -2,5 +2,5 @@ flet
 py3tftp
 pyftpdlib
 paramiko
-pyOpenSSL
+cryptography
 pysnmp
