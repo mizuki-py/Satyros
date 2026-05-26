@@ -61,14 +61,33 @@ class AsyncTFTPServer:
                         handler.read_chunk = new_read_chunk
                     
                     if hasattr(handler, 'write_chunk'):
+                        handler._finished_ref = [False]
                         orig_write_chunk = handler.write_chunk
                         def new_write_chunk(chunk_data):
                             bytes_written = orig_write_chunk(chunk_data)
                             handler._bytes_transferred = getattr(handler, '_bytes_transferred', 0) + (bytes_written or 0)
                             if self.callback:
                                 self.callback(fname_str, ip, handler._bytes_transferred)
+                            
+                            chunk_size = getattr(handler, 'chunk_size', 512)
+                            if not chunk_data or len(chunk_data) < chunk_size:
+                                handler._finished_ref[0] = True
                             return bytes_written
                         handler.write_chunk = new_write_chunk
+                        
+                        import weakref
+                        def cleanup_incomplete_file(fname, finished_ref, f_obj):
+                            if not finished_ref[0]:
+                                try:
+                                    if f_obj and not getattr(f_obj, 'closed', True):
+                                        f_obj.close()
+                                    if fname and fname.exists():
+                                        fname.unlink()
+                                        logger.info(f"Cleaned up incomplete TFTP upload: {fname}")
+                                except Exception as e:
+                                    logger.error(f"Failed to cleanup incomplete file {fname}: {e}")
+                        
+                        weakref.finalize(handler, cleanup_incomplete_file, getattr(handler, 'fname', None), handler._finished_ref, getattr(handler, '_f', None))
                     return handler
 
                 connect = self_.loop.create_datagram_endpoint(
