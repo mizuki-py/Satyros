@@ -21,7 +21,7 @@ class SNMPTab:
         # --- Trap Receiver Section ---
         self.trap_ip_input = ft.Dropdown(label="Listen IP", value="0.0.0.0", options=[ft.dropdown.Option(ip) for ip in ips], expand=True)
         self.trap_port_input = ft.TextField(label="Port", value="162", width=100)
-        self.trap_community = ft.TextField(label="Community", value="public", width=150)
+        self.trap_community = ft.TextField(label="Community", value="", width=150)
         self.trap_v3_user = ft.TextField(label="v3 User", width=150)
         self.trap_v3_auth = ft.TextField(label="v3 Auth Key", width=150, password=True, can_reveal_password=True)
         self.trap_v3_priv = ft.TextField(label="v3 Priv Key", width=150, password=True, can_reveal_password=True)
@@ -97,7 +97,7 @@ class SNMPTab:
         self.mgr_ip_input = ft.TextField(label="Target IP", value="127.0.0.1", expand=True)
         self.mgr_port_input = ft.TextField(label="Port", value="161", width=100)
         self.mgr_oid_input = ft.TextField(label="OID", value="1.3.6.1.2.1.1.1.0", expand=True)
-        self.mgr_community = ft.TextField(label="Community", value="public", width=150)
+        self.mgr_community = ft.TextField(label="Community", value="", width=150)
         self.mgr_version = ft.Dropdown(label="Version", value="2", options=[ft.dropdown.Option("1"), ft.dropdown.Option("2"), ft.dropdown.Option("3")], width=100)
         self.mgr_v3_user = ft.TextField(label="v3 User", width=150)
         self.mgr_v3_auth = ft.TextField(label="v3 Auth Key", width=150, password=True, can_reveal_password=True)

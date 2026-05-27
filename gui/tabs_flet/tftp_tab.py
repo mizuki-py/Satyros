@@ -125,6 +125,9 @@ class TFTPTab:
         local = self.client_local.value
         mode = self.client_mode.value
 
+        import time
+        last_update = [0]
+        
         def progress_cb(bytes_transferred, is_done):
             def update_ui():
                 if is_done:
@@ -133,7 +136,11 @@ class TFTPTab:
                 else:
                     self.client_status.value = f"Transferring: {bytes_transferred} bytes"
                 self.page.update()
-            update_ui()
+            
+            now = time.time()
+            if is_done or (now - last_update[0] > 0.1):
+                last_update[0] = now
+                update_ui()
             
         def _thread():
             client = TFTPClient()

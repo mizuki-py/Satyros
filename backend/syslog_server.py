@@ -2,7 +2,7 @@ import asyncio
 import logging
 import re
 import os
-from logging.handlers import TimedRotatingFileHandler
+from logging.handlers import RotatingFileHandler
 from core.config import DEFAULT_LOG_DIR
 
 logger = logging.getLogger(__name__)
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 syslog_file_logger = logging.getLogger("syslog_file")
 syslog_file_logger.setLevel(logging.INFO)
 os.makedirs(DEFAULT_LOG_DIR, exist_ok=True)
-handler = TimedRotatingFileHandler(os.path.join(DEFAULT_LOG_DIR, "syslog.log"), when="midnight", interval=1, backupCount=7)
+handler = RotatingFileHandler(os.path.join(DEFAULT_LOG_DIR, "syslog.log"), maxBytes=10*1024*1024, backupCount=5)
 handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
 syslog_file_logger.addHandler(handler)
 

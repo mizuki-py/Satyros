@@ -94,10 +94,15 @@ class AsyncFTPServer:
             return
             
         if self.use_ftps:
-            generate_self_signed_cert("cert.pem", "key.pem")
+            from core.config import BASE_DIR
+            data_dir = os.path.join(BASE_DIR, "data")
+            os.makedirs(data_dir, exist_ok=True)
+            cert_path = os.path.join(data_dir, "cert.pem")
+            key_path = os.path.join(data_dir, "key.pem")
+            generate_self_signed_cert(cert_path, key_path)
             handler = NotifyingTLS_FTPHandler
-            handler.certfile = "cert.pem"
-            handler.keyfile = "key.pem"
+            handler.certfile = cert_path
+            handler.keyfile = key_path
             handler.tls_control_required = False
             handler.tls_data_required = False
         else:

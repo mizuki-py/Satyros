@@ -69,7 +69,10 @@ class AsyncTFTPServer:
                             if self.callback:
                                 self.callback(fname_str, ip, handler._bytes_transferred)
                             
-                            chunk_size = getattr(handler, 'chunk_size', 512)
+                            try:
+                                chunk_size = int(opts.get(b'blksize', opts.get('blksize', 512)))
+                            except (TypeError, ValueError):
+                                chunk_size = 512
                             if not chunk_data or len(chunk_data) < chunk_size:
                                 handler._finished_ref[0] = True
                             return bytes_written

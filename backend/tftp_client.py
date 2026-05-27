@@ -52,14 +52,14 @@ class TFTPClient:
                     opcode, = struct.unpack(">h", data[:2])
                     
                     if opcode == self.OP_DATA:
-                        block, = struct.unpack(">h", data[2:4])
+                        block, = struct.unpack(">H", data[2:4])
                         if block == expected_block:
                             f.write(data[4:])
                             bytes_received += len(data[4:])
                             if progress_cb:
                                 progress_cb(bytes_received, False)
                             
-                            ack = struct.pack(">hh", self.OP_ACK, block)
+                            ack = struct.pack(">hH", self.OP_ACK, block)
                             last_packet_sent = ack
                             last_addr = addr
                             sock.sendto(ack, addr)
@@ -70,7 +70,7 @@ class TFTPClient:
                                 break
                         elif block == (expected_block - 1) & 0xFFFF:
                             # Re-send ACK for duplicate block (Bug 19)
-                            ack = struct.pack(">hh", self.OP_ACK, block)
+                            ack = struct.pack(">hH", self.OP_ACK, block)
                             sock.sendto(ack, addr)
                     elif opcode == self.OP_ERROR:
                         code, = struct.unpack(">h", data[2:4])
@@ -126,7 +126,7 @@ class TFTPClient:
 
                     opcode, = struct.unpack(">h", data[:2])
                     if opcode == self.OP_ACK:
-                        block, = struct.unpack(">h", data[2:4])
+                        block, = struct.unpack(">H", data[2:4])
                         if block == expected_block:
                             if is_last_chunk:
                                 # Received final ACK for the last sent block
@@ -136,7 +136,7 @@ class TFTPClient:
                             
                             expected_block = (expected_block + 1) & 0xFFFF
                             current_chunk = f.read(512)
-                            pkt = struct.pack(">hh", self.OP_DATA, expected_block) + current_chunk
+                            pkt = struct.pack(">hH", self.OP_DATA, expected_block) + current_chunk
                             
                             last_packet_sent = pkt
                             last_addr = addr
