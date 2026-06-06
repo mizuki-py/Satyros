@@ -110,7 +110,7 @@ class TFTPTab:
 
     def run_client(self, e):
         self.client_status.value = "Executing..."
-        self.client_status.color = ft.Colors.WARNING
+        self.client_status.color = ft.Colors.ORANGE
         self.page.update()
         
         import threading

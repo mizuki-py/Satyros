@@ -14,6 +14,21 @@ def setup_flet_view():
 
 setup_flet_view()
 
+# Monkey patch flet.utils.deprecated_enum to fix Python 3.12+ compatibility issue
+try:
+    import flet.utils.deprecated_enum
+    orig_getattr = flet.utils.deprecated_enum.DeprecatedEnumMeta.__getattr__
+    def fixed_getattr(cls, name):
+        try:
+            return orig_getattr(cls, name)
+        except AttributeError as e:
+            if "'super' object has no attribute '__getattr__'" in str(e):
+                raise AttributeError(f"'{cls.__name__}' object has no attribute '{name}'")
+            raise
+    flet.utils.deprecated_enum.DeprecatedEnumMeta.__getattr__ = fixed_getattr
+except ImportError:
+    pass
+
 import asyncio
 import threading
 from backend.syslog_server import SyslogServer

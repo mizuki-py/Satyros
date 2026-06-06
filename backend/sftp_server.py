@@ -25,10 +25,6 @@ class DummySFTPAuth(paramiko.ServerInterface):
     def get_allowed_auths(self, username):
         return "password"
 
-    def check_channel_subsystem_request(self, channel, name):
-        if name == b"sftp" or name == "sftp":
-            return True
-        return False
 
 def make_sftp_server_class(root_dir, allow_write):
     class StubSFTPHandle(paramiko.SFTPHandle):
@@ -184,9 +180,8 @@ class AsyncSFTPServer:
                     transport.add_server_key(host_key)
                     
                     sftp_cls = make_sftp_server_class(self.root_dir, self.allow_write)
-                    transport.set_subsystem_handler("sftp", paramiko.SFTPServer, sftp_cls)
-                    
                     server_if = DummySFTPAuth(self.username, self.password)
+                    transport.set_subsystem_handler("sftp", paramiko.SFTPServer, sftp_si=sftp_cls)
                     transport.start_server(server=server_if)
                     
                     chan = transport.accept(20)
